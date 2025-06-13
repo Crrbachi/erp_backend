@@ -14,13 +14,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 1️⃣  Autenticación con la clave JSON del secreto
+      - id: auth
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # 2️⃣  Instalar gcloud ya autenticado
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: horux-crm
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          export_default_credentials: true
+          install_components: 'gcloud'
 
+      # 3️⃣  Build & push la imagen
       - name: Build & push image
         run: |
           IMAGE="europe-west4-docker.pkg.dev/horux-crm/erp-docker-repo/erp-api:${{ github.sha }}"
