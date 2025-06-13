@@ -1,0 +1,27 @@
+name: CI-CD
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: horux-crm
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      - name: Build & push image
+        run: |
+          IMAGE="europe-west4-docker.pkg.dev/horux-crm/erp-docker-repo/erp-api:${{ github.sha }}"
+          gcloud builds submit --tag "$IMAGE" .
