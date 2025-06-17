@@ -66,5 +66,5 @@ jobs:
             --region europe-west4 \
             --image "$IMAGE" \
             --env-vars-file env.yaml \
-            --add-cloudsql-instances="${{ secrets.CLOUDSQL_CONN }}" \
+            --add-cloudsql-instances=${{ secrets.CLOUDSQL_CONN }} \
             --quiet
