@@ -121,4 +121,3 @@ REST_FRAMEWORK = {
 
 # ─────────────  CORS (bloque 2 lo revisaremos) ─────────
 CORS_ALLOW_ALL_ORIGINS = True
-º
