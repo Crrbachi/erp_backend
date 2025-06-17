@@ -5,36 +5,59 @@ on:
     branches: ["main"]
 
 permissions:
-  contents: read
-  id-token: write
+  contents: read          # necesario para checkout
+  id-token: write         # necesario para auth con Workload Identity Federation
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # ──────────────────────────────────────────────────────────
+      # 1. Obtiene el código fuente
       - uses: actions/checkout@v4
 
-      # 1️⃣  Autenticación con la SA JSON
+      # 2. Autenticación en GCP con la Service-Account JSON
       - id: auth
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # 2️⃣  Instala gcloud (ya autenticado)
+      # 3. Instala gcloud (ya autenticado)
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: horux-crm        # <── tu proyecto
+          project_id: horux-crm
           install_components: gcloud
 
-      # 3️⃣  Build & push imagen a Artifact Registry
+      # ──────────────────────────────────────────────────────────
+      # 4. (NUEVO) Genera env.yaml con los secrets de GitHub
+      - name: Create env.yaml
+        run: |
+          cat > env.yaml <<'EOF'
+          SECRET_KEY: "${{ secrets.SECRET_KEY }}"
+          DEBUG: "False"
+          ALLOWED_HOSTS_JSON: '["erp-api-1027031570676.europe-west4.run.app","localhost","127.0.0.1"]'
+
+          DB_NAME: "${{ secrets.DB_NAME }}"
+          DB_USER: "${{ secrets.DB_USER }}"
+          DB_PASS: "${{ secrets.DB_PASS }}"
+          DB_HOST: "/cloudsql/${{ secrets.CLOUDSQL_CONN }}"
+          DB_PORT: "5432"
+          EOF
+
+      # (opcional) muestra el fichero para depuración (quítalo cuando todo funcione)
+      - name: Show env.yaml
+        run: cat env.yaml
+
+      # ──────────────────────────────────────────────────────────
+      # 5. Build & push la imagen a Artifact Registry
       - name: Build & push image
         run: |
           IMAGE="europe-west4-docker.pkg.dev/horux-crm/erp-docker-repo/erp-api:${{ github.sha }}"
           gcloud builds submit --tag "$IMAGE" .
 
-      # 4️⃣  Despliegue a Cloud Run
+      # 6. Despliega la imagen a Cloud Run usando el env.yaml recién creado
       - name: Deploy to Cloud Run
         run: |
           IMAGE="europe-west4-docker.pkg.dev/horux-crm/erp-docker-repo/erp-api:${{ github.sha }}"
@@ -43,5 +66,5 @@ jobs:
             --region europe-west4 \
             --image "$IMAGE" \
             --env-vars-file env.yaml \
-            --add-cloudsql-instances horux-crm:europe-west4:erp-postgres \
+            --add-cloudsql-instances ${{ secrets.CLOUDSQL_CONN }} \
             --quiet
