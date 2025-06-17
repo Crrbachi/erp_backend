@@ -43,7 +43,7 @@ jobs:
           --image $IMAGE \
           --region europe-west4 \
           --project horux-crm \
-          --env-vars-file env.yaml \
+          --env-vars-file .github/env/prod.yaml \
           --add-cloudsql-instances horux-crm:europe-west4:erp-postgres \
           --quiet
 
