@@ -1,3 +1,5 @@
+
+
 name: CI-CD
 
 on:
@@ -12,23 +14,37 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4            # ← sin sangría extra
 
-      # 1️⃣  Autenticación con la clave JSON del secreto
-      - id: auth
-        uses: google-github-actions/auth@v1
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+    # 1️⃣ Autenticación
+    - id: auth
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # 2️⃣  Instalar gcloud ya autenticado
-      - name: Setup gcloud
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: horux-crm
-          install_components: 'gcloud'
+    # 2️⃣ Instalar gcloud
+    - name: Setup gcloud
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: horux-crm
+        install_components: 'gcloud'
 
-      # 3️⃣  Build & push la imagen
-      - name: Build & push image
-        run: |
-          IMAGE="europe-west4-docker.pkg.dev/horux-crm/erp-docker-repo/erp-api:${{ github.sha }}"
-          gcloud builds submit --tag "$IMAGE" .
+    # 3️⃣ Build & push
+    - name: Build & push image
+      run: |
+        IMAGE="europe-west4-docker.pkg.dev/horux-crm/erp-docker-repo/erp-api:${{ github.sha }}"
+        gcloud builds submit --tag "$IMAGE" .
+
+    # 4️⃣ Deploy
+    - name: Deploy to Cloud Run
+      run: |
+        IMAGE="europe-west4-docker.pkg.dev/horux-crm/erp-docker-repo/erp-api:${{ github.sha }}"
+        gcloud run deploy erp-api \
+          --image $IMAGE \
+          --region europe-west4 \
+          --project horux-crm \
+          --env-vars-file env.yaml \
+          --add-cloudsql-instances horux-crm:europe-west4:erp-postgres \
+          --quiet
+
+
