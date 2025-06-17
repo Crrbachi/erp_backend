@@ -1,0 +1,9 @@
+SECRET_KEY: "opensll rand -hex 24"
+DEBUG: "False"
+ALLOWED_HOSTS_JSON: '["erp-api-1027031570676.europe-west4.run.app","localhost","127.0.0.1"]'
+
+DB_NAME: "erp"
+DB_USER: "erpadmin"
+DB_PASS: "Cc300880020977"
+DB_HOST: "/cloudsql/horux-crm:europe-west4:erp-postgres"
+DB_PORT: "5432"
